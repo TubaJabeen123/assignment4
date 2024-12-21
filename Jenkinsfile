@@ -4,11 +4,15 @@ pipeline {
     stages {
         stage('Deploy HTML') {
             steps {
-                script {
-                    echo 'Deploying Hello.html to Apache server...'
-                    // Assuming Hello.html is already in your repository
-                    // Copy the Hello.html file to the Apache web server root
-                    sh 'cp Hello.html /var/www/html/'
+                sshagent(['apache-deploy-key']) {
+                    script {
+                        echo 'Deploying Hello.html to remote Apache server...'
+                        // Copy the file to the remote server
+                        sh 'scp Hello.html user@remote-server:/var/www/html/'
+
+                        // Restart Apache on the remote server
+                        sh 'ssh user@remote-server "sudo systemctl restart apache2"'
+                    }
                 }
             }
         }
@@ -16,34 +20,20 @@ pipeline {
         stage('Verify Deployment') {
             steps {
                 script {
-                    echo 'Verifying Hello.html deployment...'
-                    // Use curl to check if the HTML file is accessible via Apache
-                    sh 'curl http://localhost/Hello.html'
-                }
-            }
-        }
-
-        stage('Restart Apache') {
-            steps {
-                script {
-                    echo 'Restarting Apache server to apply changes...'
-                    // Restart Apache to ensure the new file is served
-                    sh 'sudo systemctl restart apache2'
+                    echo 'Verifying Hello.html deployment on remote server...'
+                    // Verify the file is served correctly
+                    sh 'curl http://remote-server/Hello.html'
                 }
             }
         }
     }
 
     post {
-        always {
-            echo 'Cleaning up resources...'
-            // Optional: Perform any cleanup steps if needed
-        }
         success {
-            echo 'Hello.html successfully deployed and served!'
+            echo 'Deployment completed successfully!'
         }
         failure {
-            echo 'Deployment failed. Check the logs for details.'
+            echo 'Deployment failed. Check the logs for more details.'
         }
     }
 }
