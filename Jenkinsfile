@@ -8,8 +8,7 @@ pipeline {
                     script {
                         echo 'Deploying Hello.html to remote Apache server...'
                         // Copy the file to the remote server
-                        // Restart Apache on the remote server
-                        sh 'ssh user@remote-server "sudo systemctl restart apache2"'
+                       sh 'scp Hello.html user@remote-server:/var/www/html/'
                     }
                 }
             }
